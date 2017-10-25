@@ -7,3 +7,12 @@ C:\Users\User\GitKraken\SocialNetwork\SocialNetwork\obj\Debug\SocialNetwork.cspr
 C:\Users\User\GitKraken\SocialNetwork\SocialNetwork\obj\Debug\SocialNetwork.csproj.CoreCompileInputs.cache
 C:\Users\User\GitKraken\SocialNetwork\SocialNetwork\obj\Debug\SocialNetwork.exe
 C:\Users\User\GitKraken\SocialNetwork\SocialNetwork\obj\Debug\SocialNetwork.pdb
+C:\GitKrakenRepo\WI-SN\SocialNetwork\bin\Debug\SocialNetwork.exe.config
+C:\GitKrakenRepo\WI-SN\SocialNetwork\bin\Debug\SocialNetwork.exe
+C:\GitKrakenRepo\WI-SN\SocialNetwork\bin\Debug\SocialNetwork.pdb
+C:\GitKrakenRepo\WI-SN\SocialNetwork\bin\Debug\MathNet.Numerics.dll
+C:\GitKrakenRepo\WI-SN\SocialNetwork\bin\Debug\MathNet.Numerics.xml
+C:\GitKrakenRepo\WI-SN\SocialNetwork\obj\Debug\SocialNetwork.csprojResolveAssemblyReference.cache
+C:\GitKrakenRepo\WI-SN\SocialNetwork\obj\Debug\SocialNetwork.csproj.CoreCompileInputs.cache
+C:\GitKrakenRepo\WI-SN\SocialNetwork\obj\Debug\SocialNetwork.exe
+C:\GitKrakenRepo\WI-SN\SocialNetwork\obj\Debug\SocialNetwork.pdb

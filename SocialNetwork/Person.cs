@@ -8,7 +8,7 @@ namespace SocialNetwork
 {
     class Person
     {
-        string name = "";
+        public string name = "";
         public List<Person> friends = new List<Person>();
         List<string> summaries = new List<string>();
         List<string> reviews = new List<string>();
