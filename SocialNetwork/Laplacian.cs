@@ -15,35 +15,46 @@ namespace SocialNetwork
         {
             List<Person> network = MakeTestNetwork();
             //network = GetPersons();
-
+            
             Matrix<double> laplacian = MakeLaplacian(network);
             
             Console.WriteLine(laplacian);
 
-            //Console.Read();
+            Matrix<double> eigenMatrix = laplacian.Evd(Symmetricity.Symmetric).EigenVectors;
 
-            Vector eigenvector = DenseVector.OfArray(laplacian.Evd(Symmetricity.Symmetric).EigenVectors.ToColumnArrays()[1]);
+            Console.WriteLine(eigenMatrix);
 
-            Console.WriteLine(eigenvector);
+            Vector eigenvector = DenseVector.OfArray(eigenMatrix.ToColumnArrays()[1]);
 
-            List<KeyValuePair<Person, double>> eigenvectorNetworkList = new List<KeyValuePair<Person, double>>();
+            List<KeyValuePair<Person, double>> networkSortedByEigenvalue = new List<KeyValuePair<Person, double>>();
             List<double> eigenValues = eigenvector.ToList();
 
-            foreach (var num in eigenValues)
+            for (int i = 0; i < eigenValues.Count; i++)
             {
-                eigenvectorNetworkList.Add(new KeyValuePair<Person, double>(network[eigenValues.IndexOf(num)], num));
+                networkSortedByEigenvalue.Add(new KeyValuePair<Person, double>(network[i], eigenValues[i]));
             }
 
-            eigenvectorNetworkList.Sort((x, y) => x.Value.CompareTo(y.Value));
+            networkSortedByEigenvalue.Sort((x, y) => x.Value.CompareTo(y.Value));
+                        
+            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue);
 
-            List<List<KeyValuePair<Person, double>>> splitEigenvector = SplitAtLargestGap(eigenvectorNetworkList);
+            foreach (var cluster in clusters)
+            {
+                Console.WriteLine(cluster[0].Key.name + " " + cluster[0].Value);
+                Console.WriteLine(cluster.Count - 2);
+                Console.WriteLine(cluster[cluster.Count - 1].Key.name + " " + cluster[cluster.Count - 1].Value);
+                Console.WriteLine();
+            }
 
+            Console.WriteLine("Done");
             Console.Read();
         }
 
+        // MAKE IT POSSIBLE TO SPLIT MULTIPLE WAYS //
+
         public List<List<KeyValuePair<Person, double>>> SplitAtLargestGap(List<KeyValuePair<Person, double>> eigenvectorNetworkList)
         {
-            List<List<KeyValuePair<Person, double>>> split = new List<List<KeyValuePair<Person, double>>>();
+            List<List<KeyValuePair<Person, double>>> clusters = new List<List<KeyValuePair<Person, double>>>();
             double currentHighest = 0;
             int splitIndex = 0;
 
@@ -52,13 +63,13 @@ namespace SocialNetwork
                 if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest)
                 {
                     currentHighest = Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value);
-                    splitIndex = i - 1;
+                    splitIndex = i;
                 }
             }
-            split.Add(eigenvectorNetworkList.GetRange(0, splitIndex));
-            split.Add(eigenvectorNetworkList.GetRange(splitIndex, (eigenvectorNetworkList.Count - splitIndex)));
-
-            return split;
+            clusters.Add(eigenvectorNetworkList.GetRange(0, splitIndex));
+            clusters.Add(eigenvectorNetworkList.GetRange(splitIndex, (eigenvectorNetworkList.Count - splitIndex)));
+                       
+            return clusters;
         }
 
         public Matrix<double> MakeLaplacian(List<Person> n)
