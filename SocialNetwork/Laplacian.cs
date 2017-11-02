@@ -26,6 +26,8 @@ namespace SocialNetwork
 
             Vector eigenvector = DenseVector.OfArray(eigenMatrix.ToColumnArrays()[1]);
 
+            Console.WriteLine(eigenvector);
+
             List<KeyValuePair<Person, double>> networkSortedByEigenvalue = new List<KeyValuePair<Person, double>>();
             List<double> eigenValues = eigenvector.ToList();
 
@@ -36,7 +38,7 @@ namespace SocialNetwork
 
             networkSortedByEigenvalue.Sort((x, y) => x.Value.CompareTo(y.Value));
                         
-            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue);
+            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 1);
 
             foreach (var cluster in clusters)
             {
@@ -52,22 +54,27 @@ namespace SocialNetwork
 
         // MAKE IT POSSIBLE TO SPLIT MULTIPLE WAYS //
 
-        public List<List<KeyValuePair<Person, double>>> SplitAtLargestGap(List<KeyValuePair<Person, double>> eigenvectorNetworkList)
+        public List<List<KeyValuePair<Person, double>>> SplitAtLargestGap(List<KeyValuePair<Person, double>> eigenvectorNetworkList, int splitAmount)
         {
             List<List<KeyValuePair<Person, double>>> clusters = new List<List<KeyValuePair<Person, double>>>();
-            double currentHighest = 0;
-            int splitIndex = 0;
+            List<double> currentHighest = new List<double>() { 0 };
+            List<int> splitIndex = new List<int>() { 0 };
 
             for (int i = 1; i < eigenvectorNetworkList.Count; i++)
             {
-                if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest)
+                if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest[0])
                 {
-                    currentHighest = Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value);
-                    splitIndex = i;
+                    currentHighest[0] = Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value);
+                    splitIndex[0] = i;
+                }
+                else if (currentHighest.Count < splitAmount)
+                {
+                    currentHighest.Add(Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value));
+                    splitIndex.Add(i);
                 }
             }
-            clusters.Add(eigenvectorNetworkList.GetRange(0, splitIndex));
-            clusters.Add(eigenvectorNetworkList.GetRange(splitIndex, (eigenvectorNetworkList.Count - splitIndex)));
+            clusters.Add(eigenvectorNetworkList.GetRange(0, splitIndex[0]));
+            clusters.Add(eigenvectorNetworkList.GetRange(splitIndex[0], (eigenvectorNetworkList.Count - splitIndex[0])));
                        
             return clusters;
         }
