@@ -48,7 +48,7 @@ namespace SocialNetwork
 
             networkSortedByEigenvalue.Sort((x, y) => x.Value.CompareTo(y.Value));
                         
-            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 9);
+            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 1);
 
             foreach (var cluster in clusters)
             {
