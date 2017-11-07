@@ -13,21 +13,31 @@ namespace SocialNetwork
     {
         public void Start()
         {
-            List<Person> network = MakeTestNetwork();
-            //network = GetPersons();
-            
-            Matrix<double> laplacian = MakeLaplacian(network);
-            
-            Console.WriteLine(laplacian);
-
-            Matrix<double> eigenMatrix = laplacian.Evd(Symmetricity.Symmetric).EigenVectors;
-
-            Console.WriteLine(eigenMatrix);
-
-            Vector eigenvector = DenseVector.OfArray(eigenMatrix.ToColumnArrays()[1]);
-
-            Console.WriteLine(eigenvector);
-
+            Vector eigenvector;
+            List<Person> network;
+            if (File.Exists(Directory.GetCurrentDirectory().Replace("bin\\Debug", "eigenvector.txt")))
+            {
+                List<string> eigenvalueStrings = File.ReadAllLines(Directory.GetCurrentDirectory().Replace("bin\\Debug", "eigenvector.txt")).ToList();
+                List<double> eigenvalues = new List<double>();
+                foreach (var str in eigenvalueStrings)
+                {
+                    eigenvalues.Add(double.Parse(str));
+                }
+                eigenvector = DenseVector.OfArray(eigenvalues.ToArray());
+                network = makeNetwork();
+            }
+            else
+            {
+                network = makeNetwork();
+                eigenvector = makeEigenvector(network);
+                List<double> eigenvalues = eigenvector.ToList();
+                string[] eigenvalueStrings = new string[eigenvalues.Count];
+                for (int i = 0; i < eigenvalues.Count; i++)
+                {
+                    eigenvalueStrings[i] = eigenvalues[i].ToString();
+                }
+                File.WriteAllLines(Directory.GetCurrentDirectory().Replace("bin\\Debug", "eigenvector.txt"), eigenvalueStrings);
+            }
             List<KeyValuePair<Person, double>> networkSortedByEigenvalue = new List<KeyValuePair<Person, double>>();
             List<double> eigenValues = eigenvector.ToList();
 
@@ -38,7 +48,7 @@ namespace SocialNetwork
 
             networkSortedByEigenvalue.Sort((x, y) => x.Value.CompareTo(y.Value));
                         
-            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 1);
+            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 9);
 
             foreach (var cluster in clusters)
             {
@@ -52,7 +62,28 @@ namespace SocialNetwork
             Console.Read();
         }
 
-        // MAKE IT POSSIBLE TO SPLIT MULTIPLE WAYS //
+        public List<Person> makeNetwork()
+        {
+            return GetPersons();
+            return MakeTestNetwork();
+        }
+
+        public Vector makeEigenvector(List<Person> network)
+        {
+            Matrix<double> laplacian = MakeLaplacian(network);
+
+            Console.WriteLine(laplacian);
+
+            Matrix<double> eigenMatrix = laplacian.Evd(Symmetricity.Symmetric).EigenVectors;
+
+            Console.WriteLine(eigenMatrix);
+
+            Vector eigenvector = DenseVector.OfArray(eigenMatrix.ToColumnArrays()[1]);
+
+            Console.WriteLine(eigenvector);
+
+            return eigenvector;
+        }
 
         public List<List<KeyValuePair<Person, double>>> SplitAtLargestGap(List<KeyValuePair<Person, double>> eigenvectorNetworkList, int splitAmount)
         {
@@ -60,23 +91,42 @@ namespace SocialNetwork
             List<double> currentHighest = new List<double>() { 0 };
             List<int> splitIndex = new List<int>() { 0 };
 
-            for (int i = 1; i < eigenvectorNetworkList.Count; i++)
+            if (splitAmount > 0)
             {
-                if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest[0])
+                for (int i = 1; i < eigenvectorNetworkList.Count; i++)
                 {
-                    currentHighest[0] = Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value);
-                    splitIndex[0] = i;
+                    for (int j = 0; j < currentHighest.Count; j++)
+                    {
+                        if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest[j])
+                        {
+                            currentHighest.Insert(j, Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value));
+                            splitIndex.Insert(j, i);
+                            if (currentHighest.Count > splitAmount)
+                            {
+                                currentHighest.RemoveAt(splitAmount);
+                                splitIndex.RemoveAt(splitAmount);
+                            }
+                            break;
+                        }
+                    }
                 }
-                else if (currentHighest.Count < splitAmount)
+                splitIndex.RemoveAll(x => x == 0);
+                splitIndex = splitIndex.Distinct().ToList();
+                splitIndex.Sort();
+                clusters.Add(eigenvectorNetworkList.GetRange(0, splitIndex.First()));
+                for (int i = 1; i < splitIndex.Count; i++)
                 {
-                    currentHighest.Add(Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value));
-                    splitIndex.Add(i);
+                    clusters.Add(eigenvectorNetworkList.GetRange(splitIndex[i - 1], (splitIndex[i] - splitIndex[i - 1])));
                 }
+                clusters.Add(eigenvectorNetworkList.GetRange(splitIndex.Last(), (eigenvectorNetworkList.Count - splitIndex.Last())));
+
+                return clusters;
             }
-            clusters.Add(eigenvectorNetworkList.GetRange(0, splitIndex[0]));
-            clusters.Add(eigenvectorNetworkList.GetRange(splitIndex[0], (eigenvectorNetworkList.Count - splitIndex[0])));
-                       
-            return clusters;
+            else
+            {
+                clusters.Add(eigenvectorNetworkList);
+                return clusters;
+            }
         }
 
         public Matrix<double> MakeLaplacian(List<Person> n)
