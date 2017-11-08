@@ -48,24 +48,43 @@ namespace SocialNetwork
 
             networkSortedByEigenvalue.Sort((x, y) => x.Value.CompareTo(y.Value));
                         
-            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 1);
+            List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 3);
 
-            foreach (var cluster in clusters)
+            // Swap cluster 2 and 3 to match cluster numbers in result
+            Swap(clusters, 2, 3);
+
+            for (int i = 0; i < clusters.Count; i++)
             {
-                Console.WriteLine(cluster[0].Key.name + " " + cluster[0].Value);
-                Console.WriteLine(cluster.Count - 2);
-                Console.WriteLine(cluster[cluster.Count - 1].Key.name + " " + cluster[cluster.Count - 1].Value);
-                Console.WriteLine();
+                Console.WriteLine("_________________________________________________________________\n");
+                Console.WriteLine("Cluster number: " + (i +1));
+                Console.WriteLine("Total persons in cluster: " + clusters[i].Count);
+                Console.Write(clusters[i][0].Key.name + " " + clusters[i][0].Value);
+                Console.Write(" ... ");
+                Console.WriteLine(clusters[i][clusters[i].Count - 1].Key.name + " " + clusters[i][clusters[i].Count - 1].Value);
+                Console.WriteLine("_________________________________________________________________");
             }
-
-            Console.WriteLine("Done");
+            for (int i = 0; i < clusters.Count; i++)
+            {
+                string name = "Abdul";
+                if (clusters[i].Any(x => x.Key.name.Equals(name)))
+                {
+                    Console.WriteLine("\n" + name + " is in cluster " + (i + 1));
+                }
+            }
             Console.Read();
+        }
+
+        static void Swap(IList<List<KeyValuePair<Person, double>>> list, int indexA, int indexB)
+        {
+            List<KeyValuePair<Person, double>> tmp = list[indexA];
+            list[indexA] = list[indexB];
+            list[indexB] = tmp;
         }
 
         public List<Person> makeNetwork()
         {
             return GetPersons();
-            return MakeTestNetwork();
+            //return MakeTestNetwork();
         }
 
         public Vector makeEigenvector(List<Person> network)
@@ -90,36 +109,77 @@ namespace SocialNetwork
             List<List<KeyValuePair<Person, double>>> clusters = new List<List<KeyValuePair<Person, double>>>();
             List<double> currentHighest = new List<double>() { 0 };
             List<int> splitIndex = new List<int>() { 0 };
+            int largestCluster = 0;
+            int originalSplitAmount = splitAmount;
 
             if (splitAmount > 0)
             {
-                for (int i = 1; i < eigenvectorNetworkList.Count; i++)
+                splitAmount--;
+                do
                 {
-                    for (int j = 0; j < currentHighest.Count; j++)
+                    currentHighest = new List<double>() { 0 };
+                    splitIndex = new List<int>() { 0 };
+                    largestCluster = 0;
+                    splitAmount++;
+                    // Find indexes for splitting
+                    for (int i = 1; i < eigenvectorNetworkList.Count; i++)
                     {
-                        if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest[j])
+                        for (int j = 0; j < currentHighest.Count; j++)
                         {
-                            currentHighest.Insert(j, Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value));
-                            splitIndex.Insert(j, i);
-                            if (currentHighest.Count > splitAmount)
+                            if (Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value) > currentHighest[j])
                             {
-                                currentHighest.RemoveAt(splitAmount);
-                                splitIndex.RemoveAt(splitAmount);
+                                currentHighest.Insert(j, Math.Abs(eigenvectorNetworkList[i].Value - eigenvectorNetworkList[i - 1].Value));
+                                splitIndex.Insert(j, i);
+                                if (currentHighest.Count > splitAmount)
+                                {
+                                    currentHighest.RemoveAt(splitAmount);
+                                    splitIndex.RemoveAt(splitAmount);
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
+
+                    // Remove unwanted indexes and sort
+                    splitIndex.RemoveAll(x => x == 0);
+                    splitIndex = splitIndex.Distinct().ToList();
+                    splitIndex.Sort();
+
+                    // Remove indexes which make very small clusters (relative to largest cluster)
+                    largestCluster = splitIndex.First();
+                    for (int i = 1; i < splitIndex.Count; i++)
+                    {
+                        if (splitIndex[i] - splitIndex[i - 1] > largestCluster) largestCluster = splitIndex[i] - splitIndex[i - 1];
+                    }
+                    if (eigenvectorNetworkList.Count - splitIndex.Last() > largestCluster) largestCluster = eigenvectorNetworkList.Count - splitIndex.Last();
+                    
+                    for (int i = 0; i < splitIndex.Count; i++)
+                    {
+                        if (i == 0)
+                        {
+                            if (splitIndex.First() < (largestCluster / 10)) splitIndex.RemoveAt(i--);
+                        }
+                        else if (splitIndex[i] - splitIndex[i - 1] < (largestCluster / 10)) splitIndex.RemoveAt(i--);
+                    }
+                    if (eigenvectorNetworkList.Count - splitIndex.Last() < (largestCluster / 10)) splitIndex.Remove(splitIndex.Last());
+
+                    if (splitAmount > 250)
+                    {
+                        Console.WriteLine("Cannot find " + originalSplitAmount + " clusters that is not too small. Here is the network as one cluster.");
+                        clusters.Add(eigenvectorNetworkList);
+                        return clusters;
+                    }
                 }
-                splitIndex.RemoveAll(x => x == 0);
-                splitIndex = splitIndex.Distinct().ToList();
-                splitIndex.Sort();
+                while (splitIndex.Count < originalSplitAmount);
+
+                // Make clusters
                 clusters.Add(eigenvectorNetworkList.GetRange(0, splitIndex.First()));
                 for (int i = 1; i < splitIndex.Count; i++)
                 {
                     clusters.Add(eigenvectorNetworkList.GetRange(splitIndex[i - 1], (splitIndex[i] - splitIndex[i - 1])));
                 }
                 clusters.Add(eigenvectorNetworkList.GetRange(splitIndex.Last(), (eigenvectorNetworkList.Count - splitIndex.Last())));
-
+                
                 return clusters;
             }
             else
