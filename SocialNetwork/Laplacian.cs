@@ -51,13 +51,15 @@ namespace SocialNetwork
             List<List<KeyValuePair<Person, double>>> clusters = SplitAtLargestGap(networkSortedByEigenvalue, 3);
 
             // Swap cluster 2 and 3 to match cluster numbers in result
-            Swap(clusters, 2, 3);
+            if (clusters.Count > 3) Swap(clusters, 2, 3);
 
+            List<int> amount = new List<int>() { 1750, 1167, 683, 619, 0, 0, 0, 0, 0, 0, 0 };
             for (int i = 0; i < clusters.Count; i++)
             {
                 Console.WriteLine("_________________________________________________________________\n");
-                Console.WriteLine("Cluster number: " + (i +1));
+                Console.WriteLine("Cluster number: " + (i + 1));
                 Console.WriteLine("Total persons in cluster: " + clusters[i].Count);
+                Console.WriteLine("Wanted persons in cluster: " + amount[i] + " (difference: " + (amount[i] - clusters[i].Count) + ")");
                 Console.Write(clusters[i][0].Key.name + " " + clusters[i][0].Value);
                 Console.Write(" ... ");
                 Console.WriteLine(clusters[i][clusters[i].Count - 1].Key.name + " " + clusters[i][clusters[i].Count - 1].Value);
